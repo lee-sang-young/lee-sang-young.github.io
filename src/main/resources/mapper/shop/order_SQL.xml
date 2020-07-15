@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="order">
+
+	<select id="orderWriteG" parameterType="hashmap" resultType="hashmap">
+		<![CDATA[
+			SELECT  
+					GOODS_NUM,
+					GOODS_TITLE,
+					GOODS_SELLER,
+			        TO_CHAR(SYSDATE,'hh24:mi:ss') AS ORDER_TIME,
+			        GOODS_PRICE
+			FROM    GOODS
+			WHERE   GOODS_NUM = #{GOODS_NUM}
+		]]>
+	</select>
+
+	<select id="orderWriteM" parameterType="hashmap" resultType="hashmap">
+		<![CDATA[
+			SELECT  MEM_ID,
+			        MEM_NAME,
+			        MEM_PHONE,
+			        MEM_ADD1
+			FROM    MEMBER
+			WHERE   MEM_ID = #{MEM_ID}
+		]]>
+	</select>
+	
+	<!-- (유진추가) 리뷰 정보 insert -->
+	<insert id="insertreviewgo" parameterType="hashmap" useGeneratedKeys="true" keyProperty="IDX">
+		
+		<![CDATA[
+			INSERT
+			INTO    REVIEW  (
+			                REVIEW_NUM,
+			                REVIEW_SELLER,
+			                REVIEW_ORDER_NUM,
+			                REVIEW_GRADE,
+			                REVIEW_DATE,
+			                REVIEW_USER,
+			                REVIEW_CONTENT
+			                )
+			VALUES          (
+			                REVIEW_SEQ.NEXTVAL,
+			                #{REVIEW_SELLER},
+			                #{ORDERS_NUM},
+			                #{RE_LIKE},
+			                SYSDATE,
+			                #{REVIEW_USER},
+			                #{REVIEW_CONTENT}
+			                )
+		]]>
+	</insert>
+	
+	<insert id="insertOrder" parameterType="hashmap" useGeneratedKeys="true" keyProperty="IDX">
+		<selectKey keyProperty="IDX" resultType="string" order="BEFORE">
+			SELECT ORDERS_SEQ.NEXTVAL FROM DUAL	
+		</selectKey>
+		<![CDATA[
+			INSERT
+			INTO    ORDERS  (
+			                ORDERS_NUM,
+			                ORDERS_PRONUM,
+			                ORDERS_USER,
+			                ORDERS_PHONE,
+			                ORDERS_STATUS,
+			                ORDERS_PRICE,
+			                ORDERS_TCOST,
+			                ORDERS_DADD1,
+			                ORDERS_DADD2,
+			                ORDERS_DMEMO,
+			                ORDERS_PAY,
+			                ORDERS_DEL_GB
+			                )
+			VALUES          (
+			                #{IDX},
+			                #{GOODS_NUM},
+			                (SELECT MEM_NUM FROM MEMBER WHERE MEM_ID = #{MEM_ID}),
+			                #{MEM_PHONE},
+			                '주문/결제',
+			                #{GOODS_PRICE},
+			                #{GOODS_TCOST},
+			                #{ADD1},
+			                #{ADD2}, 
+			                #{DMEMO},
+			                'kakaoPay',
+			                'N'
+			                )
+		]]>
+	</insert>
+	
+	<select id="orderDetail" parameterType="hashmap" resultType="hashmap">
+		<![CDATA[
+			SELECT  ORDERS_NUM,
+			        ORDERS_PRONUM,
+			        ORDERS_USER,
+			        ORDERS_PHONE,
+			        ORDERS_STATUS,
+			        
+			        ORDERS_PRICE,
+			        ORDERS_TCOST,
+			        ORDERS_DADD1,
+			        ORDERS_DADD2,
+			        ORDERS_DMEMO,
+			        ORDERS_PAY
+			FROM    ORDERS
+			WHERE   ORDERS_NUM = #{IDX}
+		]]>
+	</select>
+	
+	<!-- //(유진추가) 리뷰 남겼는지 안남겼는지 업데이트 -->
+	<update id="updateReviewYesOrNo" parameterType="hashmap">
+		<![CDATA[
+					UPDATE  ORDERS
+		SET     ORDERS_REVIEW_CONFIRM = 'Y',
+				ORDERS_REVIEW_GRADE = #{RE_LIKE}
+		WHERE   ORDERS_NUM = #{ORDERS_NUM}
+		]]>
+	</update>
+</mapper>
